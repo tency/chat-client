@@ -25,6 +25,21 @@
         <hr />
     </div>
 
+    <div id="find-panel">
+        <div class="layui-form-item">
+            <label class="layui-form-label">请输入</label>
+            <div class="layui-input-block">
+                <input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="请输入昵称、账号或id"
+                    class="layui-input" id="find_input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button type="submit" class="layui-btn" lay-submit="" lay-filter="demo1" id="add_btn">添加好友</button>
+            </div>
+        </div>
+    </div>
+
     <script src="./static/layui/layui.js"></script>
     <script src="./static/js/jquery.min.js?v=2.1.4"></script>
     <script src="./static/js/ws-client.js"></script>
@@ -40,6 +55,7 @@
 
         // 一开始隐藏登录，socket连接成功了才显示出来
         showDiv("login-panel", false);
+        showDiv("find-panel", false);
 
         // 我的信息
         let myData = null;
@@ -59,7 +75,7 @@
             }
             ws.request("10001", reqData, (code, data) => {
                 console.log("login resp, code = " + code);
-                console.log(data);
+                console.log(data.friendList);
                 if (code == 1) {
                     // 登录成功
                     myData = data;
@@ -71,7 +87,31 @@
             });
         });
 
-        let address = "ws://39.105.181.208:41001";
+        // 添加好友响应
+        document.getElementById("add_btn").addEventListener("click", function () {
+            let value = document.getElementById("find_input").value;
+
+            console.log("click on find, account = " + value);
+
+            // 发送添加好友请求
+            let reqData = {
+                myId: myData.mine.id, // 自己的id
+                targetId: value // 目标的id
+            }
+            ws.request("10006", reqData, (code, data) => {
+                console.log("add friend resp, code = " + code);
+                console.log(data);
+                if (code == 1) {
+                    // 登录成功
+                    myData.friendList = data;
+                } else {
+                    // 失败
+                    layer.msg("添加好友失败");
+                }
+            });
+        });
+
+        let address = "ws://127.0.0.1:41001";
         let socket = new WebSocket(address);
         let ws = new WSClient();
         ws.connectSocket(address, socket, function () {
@@ -98,6 +138,7 @@
         onLoginSuss = function () {
             // 隐藏登录面板
             showDiv("login-panel", false);
+            showDiv("find-panel", true);
             showChatPanel();
         };
 
@@ -116,17 +157,22 @@
                 //先来个客服模式压压精
                 console.log("mydata =")
                 console.log(myData)
+
                 layim.config({
                     init: {
                         //我的信息
                         mine: {
-                            "username": myData.username, //我的昵称
-                            "id": myData.id, //我的ID
+                            "username": myData.mine.username, //我的昵称
+                            "id": myData.mine.id, //我的ID
                             "status": "online", //在线状态 online：在线、hide：隐身
-                            "sign": myData.sign, //我的签名
-                            "avatar": myData.avatar, //我的头像
+                            "sign": myData.mine.sign, //我的签名
+                            "avatar": myData.mine.avatar, //我的头像
                         },
-                        friend: [],
+                        friend: [{
+                            groupname: "我的好友",
+                            id: 1,
+                            list: myData.friendList
+                        }],
                         group: [],
                     },
 
@@ -134,7 +180,10 @@
                     uploadImage: {
                         url: 'http://www.tap2joy.com/upload.php', //接口地址
                         type: 'post' //默认post
-                    }
+                    },
+
+                    msgbox: './msgbox.html', //消息盒子页面地址，若不开启，剔除该项即可
+                    find: './find.html' //发现页面地址，若不开启，剔除该项即可
                 });
 
                 //监听签名修改
