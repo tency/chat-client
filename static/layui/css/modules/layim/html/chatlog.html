@@ -1,0 +1,120 @@
+ 
+ 
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>聊天记录</title>
+
+<link rel="stylesheet" href="/static/layui/css/layui.css">
+<style>
+body .layim-chat-main{height: auto;}
+</style>
+</head>
+<body>
+
+<div class="layim-chat-main">
+    <ul id="LAY_view"></ul>
+</div>
+
+<div id="LAY_page" style="margin: 0 10px;"></div>
+
+
+<textarea title="消息模版" id="LAY_tpl" style="display:none;">
+{{# layui.each(d.data, function(index, item){
+    if(item.id == parent.layui.layim.cache().mine.id){ }}
+        <li class="layim-chat-mine"><div class="layim-chat-user"><img src="{{ item.avatar }}"><cite><i>{{ layui.data.date(item.timestamp) }}</i>{{ item.username }}</cite></div><div class="layim-chat-text">{{ layui.layim.content(item.content) }}</div></li>
+    {{# } else { }}
+        <li><div class="layim-chat-user"><img src="{{ item.avatar }}"><cite>{{ item.username }}<i>{{ layui.data.date(item.timestamp) }}</i></cite></div><div class="layim-chat-text">{{ layui.layim.content(item.content) }}</div></li>
+    {{# }
+}); }}
+</textarea>
+
+<!-- 
+上述模版采用了 laytpl 语法，不了解的同学可以去看下文档：http://www.layui.com/doc/modules/laytpl.html
+-->
+
+<script src="/static/layui/layui.js"></script>
+<script type="text/javascript" src="/static/js/jquery.min.js?v=2.1.4"></script>
+<script src="/static/js/bgdutil.js"></script>
+<script src="/static/js/configLoader.js"></script>
+<script src="/static/js/aes.js"></script>
+<script>
+layui.use(['layim', 'laypage', 'form', 'jquery'], function(){
+    var form = layui.form,
+    layim = layui.layim,
+    layer = layui.layer,
+    laytpl = layui.laytpl,
+    $ = layui.jquery,
+    laypage = layui.laypage;
+  
+    //聊天记录的分页此处不做演示，你可以采用laypage，不了解的同学见文档：http://www.layui.com/doc/modules/laypage.html
+    var mine_uid = 0;
+
+    if (parent.layui.layim.cache().mine) {
+        mine_uid = parent.layui.layim.cache().mine.id;
+    } else {
+        // 解析参数，从参数中获取
+        mine_uid = GetUrlArgs('mine');
+
+        parent.layui.layim.cache().mine = {};
+        parent.layui.layim.cache().mine.id = mine_uid;
+    }
+
+    var postData = {};
+    postData.uid = mine_uid;
+    postData.mod = 'user';
+    postData.act = 'get_chat_log';
+    postData.args = {};
+    postData.args.fid = GetUrlArgs('id');
+
+    //console.log(postData);
+
+    // 加载配置文件
+    var configLoader = new ECity.ConfigLoader();
+    var config = configLoader.getConfig();
+    var key = CryptoJS.enc.Utf8.parse(config['chat_key']);
+
+    var res = {
+        code: 0
+        ,msg: ''
+        ,data: [],
+    }
+
+    ajaxPost(config['chat_url'], postData, function(err, data) {
+        if (data && data.chatLog) {
+            var mine = data.mine;
+            var friend = data.friend;
+            for (var i = 0; i < data.chatLog.length; i++) {
+                var node = data.chatLog[i];
+                if (node.id == mine_uid) {
+                    node.username = mine.username;
+                    node.avatar = config['web_url'] + '/static/img/a' + mine.avatar + '.jpg';
+                } else {
+                    node.username = friend.username;
+                    node.avatar = config['web_url'] + '/static/img/a' + friend.avatar + '.jpg';
+                }
+
+                var decryptedData = CryptoJS.AES.decrypt(node.content, key, {
+                    mode: CryptoJS.mode.ECB,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                var decryptedStr = decryptedData.toString(CryptoJS.enc.Utf8);
+                node.content = decryptedStr;
+
+                res.data.push(node);
+            }
+        }
+
+        var html = laytpl(LAY_tpl.value).render({
+            data: res.data
+        });
+    
+        $('#LAY_view').html(html);
+    });
+  
+});
+</script>
+</body>
+</html>
