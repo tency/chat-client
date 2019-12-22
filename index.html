@@ -44,6 +44,11 @@
     <script src="./static/js/jquery.min.js?v=2.1.4"></script>
     <script src="./static/js/ws-client.js"></script>
     <script>
+        window.onunload = function (event) {
+            console.log('close window');
+            ws.disconnect();
+        }
+
         function showDiv(id, visible) {
             let traget = document.getElementById(id);
             if (visible) {
@@ -54,36 +59,57 @@
         };
 
         // 一开始隐藏登录，socket连接成功了才显示出来
-        showDiv("login-panel", false);
+        showDiv("login-panel", true);
         showDiv("find-panel", false);
 
         // 我的信息
         let myData = null;
         let tmpLayim = null;
+        let ws = null;
+        let account = "";
+        let password = "";
 
         // 添加登录按钮响应
         document.getElementById("login_btn").addEventListener("click", function () {
             // 获取账号密码
-            let account = document.getElementById("account_input").value;
-            let password = document.getElementById("password_input").value;
+            account = document.getElementById("account_input").value;
+            password = document.getElementById("password_input").value;
 
             console.log("click on login, account = " + account + ", password = " + password);
 
-            // 发送登录请求
-            let reqData = {
-                account: account,
-                pwd: password
-            }
-            ws.request("10001", reqData, (code, data) => {
-                console.log("login resp, code = " + code);
-                console.log(data.friendList);
-                if (code == 1) {
-                    // 登录成功
-                    myData = data;
-                    onLoginSuss();
-                } else {
-                    // 失败
-                    onLoginFailed();
+            let address = "ws://127.0.0.1:41001";
+            let socket = new WebSocket(address);
+            ws = new WSClient();
+            ws.connectSocket(address, socket, function () {
+                console.log("call open callback");
+                // 发送一个握手消息
+                let loginData = {
+                    serverType: 'client'
+                };
+                ws.request("login-req", loginData, (code, resp) => {
+                    console.log('client register to login server suss');
+                    console.log(resp);
+                    onSocketConnected();
+                });
+            });
+
+            // 好友通知
+            ws.on("20001", (data) => {
+                console.log("add friend notify");
+                console.log(data)
+                layer.msg(data.username + "添加你为好友");
+
+                //myData.friendList.push(data);
+                // 将好友追加到主面板
+                if (tmpLayim) {
+                    tmpLayim.addList({
+                        type: "friend",
+                        username: data.username,
+                        avatar: data.avatar,
+                        groupid: 1, //所在的分组id
+                        id: data.id, //好友ID
+                        sign: data.sign //好友签名
+                    });
                 }
             });
         });
@@ -123,47 +149,27 @@
             });
         });
 
-        let address = "ws://39.105.181.208:41001";
-        let socket = new WebSocket(address);
-        let ws = new WSClient();
-        ws.connectSocket(address, socket, function () {
-            console.log("call open callback");
-            // 发送一个握手消息
-            let loginData = {
-                serverType: 'client'
-            };
-            ws.request("login-req", loginData, (code, resp) => {
-                console.log('client register to login server suss');
-                console.log(resp);
-                onSocketConnected();
-            });
-        });
-
-        // 好友通知
-        ws.on("20001", (data) => {
-            console.log("add friend notify");
-            console.log(data)
-            layer.msg(data.username + "添加你为好友");
-
-            //myData.friendList.push(data);
-            // 将好友追加到主面板
-            if (tmpLayim) {
-                tmpLayim.addList({
-                    type: "friend",
-                    username: data.username,
-                    avatar: data.avatar,
-                    groupid: 1, //所在的分组id
-                    id: data.id, //好友ID
-                    sign: data.sign //好友签名
-                });
-            }
-        });
-
         // socket连接成功回调
         onSocketConnected = function () {
             console.log('onSocketConnected');
 
-            showLoginPanel();
+            // 发送登录请求
+            let reqData = {
+                account: account,
+                pwd: password
+            }
+            ws.request("10001", reqData, (code, data) => {
+                console.log("login resp, code = " + code);
+                console.log(data.friendList);
+                if (code == 1) {
+                    // 登录成功
+                    myData = data;
+                    onLoginSuss();
+                } else {
+                    // 失败
+                    onLoginFailed();
+                }
+            });
         };
 
         // 登录成功回调
