@@ -59,6 +59,7 @@
 
         // 我的信息
         let myData = null;
+        let tmpLayim = null;
 
         // 添加登录按钮响应
         document.getElementById("login_btn").addEventListener("click", function () {
@@ -102,8 +103,19 @@
                 console.log("add friend resp, code = " + code);
                 console.log(data);
                 if (code == 1) {
-                    // 登录成功
-                    myData.friendList = data;
+                    //myData.friendList.push(data);
+                    layer.msg("添加好友成功");
+                    // 将好友追加到主面板
+                    if (tmpLayim) {
+                        tmpLayim.addList({
+                            type: "friend",
+                            username: data.username,
+                            avatar: data.avatar,
+                            groupid: 1, //所在的分组id
+                            id: data.id, //好友ID
+                            sign: data.sign //好友签名
+                        });
+                    }
                 } else {
                     // 失败
                     layer.msg("添加好友失败");
@@ -125,6 +137,26 @@
                 console.log(resp);
                 onSocketConnected();
             });
+        });
+
+        // 好友通知
+        ws.on("20001", (data) => {
+            console.log("add friend notify");
+            console.log(data)
+            layer.msg(data.username + "添加你为好友");
+
+            //myData.friendList.push(data);
+            // 将好友追加到主面板
+            if (tmpLayim) {
+                tmpLayim.addList({
+                    type: "friend",
+                    username: data.username,
+                    avatar: data.avatar,
+                    groupid: 1, //所在的分组id
+                    id: data.id, //好友ID
+                    sign: data.sign //好友签名
+                });
+            }
         });
 
         // socket连接成功回调
@@ -158,6 +190,7 @@
                 console.log("mydata =")
                 console.log(myData)
 
+                tmpLayim = layim;
                 layim.config({
                     init: {
                         //我的信息
@@ -192,7 +225,7 @@
 
                     // 向服务器发送修改请求
                     let reqData = {
-                        id: myData.id,
+                        id: myData.mine.id,
                         sign: value
                     }
                     ws.request("10003", reqData, (code, data) => {
