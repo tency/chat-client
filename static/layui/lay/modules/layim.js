@@ -388,7 +388,6 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
   //Ajax
   var post = function(options, callback, tips){
     options = options || {};
-    console.log(options)
     return $.ajax({
       url: options.url
       ,type: options.type || 'get'
@@ -415,11 +414,7 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
     // 每次刷新页面都清空聊天记录
     //layui.data('layim')[mine.id].chatlog = {};
     var local = layui.data('layim')[mine.id] || {};
-
-    console.log("init >>>>>>>>>>>>>>>>>>>")
     local["chatlog"] = {};
-    console.log(local["chatlog"])
-    console.log(local.chatLog)
 
     var obj = {
       base: options
@@ -584,9 +579,7 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
   
   //显示聊天面板
   var layimChat, layimMin, chatIndex, To = {}, popchat = function(data){
-    console.log("popchat >>>>>>>");
     data = data || {};
-    console.log(data)
     var chat = $('#layui-layim-chat'), render = {
       data: data
       ,base: cache.base
@@ -653,7 +646,6 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
       ,content: laytpl('<ul class="layui-unselect layim-chat-list">'+ elemChatList +'</ul><div class="layim-chat-box">' + elemChatTpl + '</div>').render(render)
       ,success: function(layero){
         layimChat = layero;
-        console.log('layimChat = layero');
         
         layero.css({
           'min-width': '500px'
@@ -713,7 +705,6 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
       ,end: function(){
         layer.closeAll('tips');
         layimChat = null;
-        console.log('layimChat = null');
       }
     });
     return index;
@@ -1119,9 +1110,6 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
   
   //存储最近MAX_ITEM条聊天记录到本地
   var pushChatlog = function(message){
-      console.log("pushChatlog >>>>>>>>")
-      console.log(message);
-      console.log("<<<<<<<<<<");
     var local = layui.data('layim')[cache.mine.id] || {};
     local.chatlog = local.chatlog || {};
     var thisChatlog = local.chatlog[message.type + message.id];
@@ -1145,8 +1133,7 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
     } else {
       local.chatlog[message.type + message.id] = [message];
     }
-    console.log(local.chatlog);
-      console.log("<<<<<<<<<<");
+
     layui.data('layim', {
       key: cache.mine.id
       ,value: local
@@ -1158,7 +1145,6 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
     var local = layui.data('layim')[cache.mine.id] || {}
     ,thatChat = thisChat(), chatlog = local.chatlog || {}
     ,ul = thatChat.elem.find('.layim-chat-main ul');
-    console.log(chatlog)
     layui.each(chatlog[thatChat.data.type + thatChat.data.id], function(index, item){
       ul.append(laytpl(elemChatMain).render(item));
     });
