@@ -306,10 +306,25 @@
                                     type: data.to.type
                                 }
 
-                                console.log(newMsg)
                                 layim.getMessage(newMsg)
                             } else {
                                 layer.msg(data);
+                            }
+                        } else {
+                            // 发送成功
+                            if (res.to.type == "friend") {
+                                let newMsg = {
+                                    username: data.mine.username,
+                                    avatar: data.mine.avatar,
+                                    id: data.to.id,
+                                    content: data.mine.content,
+                                    mine: true,
+                                    fromid: data.mine.id,
+                                    timestamp: data.timestamp,
+                                    type: data.to.type
+                                }
+
+                                layim.getMessage(newMsg)
                             }
                         }
                     });
