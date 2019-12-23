@@ -278,7 +278,13 @@
                 layim.on('sendMessage', function (res) {
                     console.log(res)
 
-                    let reqData = res;
+                    let reqData = {
+                        mine: res.mine,
+                        to: {
+                            type: res.to.type,
+                            id: res.to.id
+                        }
+                    };
 
                     ws.request("10007", reqData, (code, data) => {
                         console.log("send chat resp, code = " + code);
