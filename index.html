@@ -68,6 +68,8 @@
         let ws = null;
         let account = "";
         let password = "";
+        let requestedGroupLog = []; // 已经请求过群聊天记录的id，避免一直请求
+        let requestedFriendLog = []; // 已经请求过好友聊天的id
 
         // 添加登录按钮响应
         document.getElementById("login_btn").addEventListener("click", function () {
@@ -124,7 +126,7 @@
                         id: data.to.type == "group" ? data.to.id : data.mine.id,
                         content: data.mine.content,
                         mine: data.mine.id == myData.mine.id,
-                        fromid: data.mine.id,
+                        fromid: data.to.id,
                         timestamp: data.timestamp,
                         type: data.to.type
                     }
@@ -181,14 +183,13 @@
             }
             ws.request("10001", reqData, (code, data) => {
                 console.log("login resp, code = " + code);
-                console.log(data.friendList);
                 if (code == 1) {
                     // 登录成功
                     myData = data;
                     onLoginSuss();
                 } else {
                     // 失败
-                    onLoginFailed();
+                    onLoginFailed(code);
                 }
             });
         };
@@ -201,8 +202,10 @@
             showChatPanel();
         };
 
-        onLoginFailed = function () {
-
+        onLoginFailed = function (code) {
+            if (code == 3) {
+                alert("密码不正确！");
+            }
         };
 
         // 显示登录界面
@@ -288,12 +291,78 @@
 
                     ws.request("10007", reqData, (code, data) => {
                         console.log("send chat resp, code = " + code);
-                        console.log(data);
                         if (code != 1) {
-                            // 失败
-                            layer.msg("消息发送失败");
+                            if (code == 4) {
+                                // 执行命令
+                                let newMsg = {
+                                    username: data.mine.username,
+                                    avatar: data.mine.avatar,
+                                    id: data.to.type == "group" ? data.to
+                                        .id : data.mine.id,
+                                    content: data.mine.content,
+                                    mine: false,
+                                    fromid: data.to.id,
+                                    timestamp: data.timestamp,
+                                    type: data.to.type
+                                }
+
+                                console.log(newMsg)
+                                layim.getMessage(newMsg)
+                            } else {
+                                layer.msg(data);
+                            }
                         }
                     });
+                });
+
+                // 监听聊天窗口的切换
+                layim.on('chatChange', function (obj) {
+                    if (obj.data.type == "group") {
+                        // 请求群聊天记录
+                        if (requestedGroupLog.indexOf(obj.data.id) < 0) {
+                            let reqData = {
+                                type: "group",
+                                id: obj.data.id
+                            };
+                            ws.request("10008", reqData, (code, data) => {
+                                console.log("get chat log resp, code = " + code);
+                                console.log(data);
+                                if (code == 1) {
+                                    requestedGroupLog.push(obj.data.id);
+                                    for (let i = 0; i < data.length; i++) {
+                                        let newMsg = {
+                                            username: data[i].mine.username,
+                                            avatar: data[i].mine.avatar,
+                                            id: data[i].to.type == "group" ? data[i].to
+                                                .id : data[i].mine.id,
+                                            content: data[i].mine.content,
+                                            mine: data[i].mine.id == myData.mine.id,
+                                            fromid: data[i].to.id,
+                                            timestamp: data[i].timestamp,
+                                            type: data[i].to.type
+                                        }
+
+                                        layim.getMessage(newMsg)
+                                    }
+                                }
+                            });
+                        }
+                    } else if (obj.data.type == "friend") {
+                        if (requestedFriendLog.indexOf(obj.data.id) < 0) {
+                            let reqData = {
+                                type: "friend",
+                                id: myData.mine.id,
+                                targetId: obj.data.id
+                            };
+                            ws.request("10008", reqData, (code, data) => {
+                                console.log("get chat log resp, code = " + code);
+                                console.log(data);
+                                if (code == 1) {
+                                    requestedFriendLog.push(obj.data.id);
+                                }
+                            });
+                        }
+                    }
                 });
             });
         };
