@@ -388,6 +388,7 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
   //Ajax
   var post = function(options, callback, tips){
     options = options || {};
+    console.log(options)
     return $.ajax({
       url: options.url
       ,type: options.type || 'get'
@@ -940,7 +941,7 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
         return layer.msg('内容最长不能超过'+ maxLength +'个字符')
       }
       
-      ul.append(laytpl(elemChatMain).render(data));
+      //ul.append(laytpl(elemChatMain).render(data));
       
       var param = {
         mine: data
@@ -954,7 +955,7 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
         ,timestamp: new Date().getTime()
         ,mine: true
       };
-      pushChatlog(message);
+      //pushChatlog(message);
       
       layui.each(call.sendMessage, function(index, item){
         item && item(param);

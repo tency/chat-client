@@ -29,7 +29,7 @@
         <div class="layui-form-item">
             <label class="layui-form-label">请输入</label>
             <div class="layui-input-block">
-                <input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="请输入昵称、账号或id"
+                <input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="暂时只支持uid添加好友"
                     class="layui-input" id="find_input">
             </div>
         </div>
@@ -110,6 +110,27 @@
                         id: data.id, //好友ID
                         sign: data.sign //好友签名
                     });
+                }
+            });
+
+            // 聊天消息通知
+            ws.on("20002", (data) => {
+                console.log(data)
+
+                if (tmpLayim) {
+                    let newMsg = {
+                        username: data.mine.username,
+                        avatar: data.mine.avatar,
+                        id: data.to.type == "group" ? data.to.id : data.mine.id,
+                        content: data.mine.content,
+                        mine: data.mine.id == myData.mine.id,
+                        fromid: data.mine.id,
+                        timestamp: data.timestamp,
+                        type: data.to.type
+                    }
+
+                    console.log(newMsg);
+                    tmpLayim.getMessage(newMsg)
                 }
             });
         });
@@ -249,6 +270,22 @@
                         } else {
                             // 失败
                             layer.msg("签名修改失败");
+                        }
+                    });
+                });
+
+                // 监听消息发送
+                layim.on('sendMessage', function (res) {
+                    console.log(res)
+
+                    let reqData = res;
+
+                    ws.request("10007", reqData, (code, data) => {
+                        console.log("send chat resp, code = " + code);
+                        console.log(data);
+                        if (code != 1) {
+                            // 失败
+                            layer.msg("消息发送失败");
                         }
                     });
                 });
