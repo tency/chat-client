@@ -38,7 +38,7 @@ else
                 //保存文件,   move_uploaded_file 将上传的文件移动到新位置  
                 $ok = move_uploaded_file($_FILES["file"]["tmp_name"], $filepath);
                 if ($ok) {
-                    $resp['data']['src'] = 'http://192.168.8.16:9001/upload/'.$filename;
+                    $resp['data']['src'] = 'http://www.tap2joy.com/upload/'.$filename;
                 } else {
                     $resp['code'] = 4;
                     $resp['msg'] = "无法保存文件" . $filepath;
