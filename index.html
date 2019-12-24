@@ -49,6 +49,12 @@
             ws.disconnect();
         }
 
+        window.onbeforeunload = function (event) {
+            event.returnValue = "我在这写点东西...";
+            console.log('onbeforeunload');
+            ws.disconnect();
+        };
+
         function showDiv(id, visible) {
             let traget = document.getElementById(id);
             if (visible) {
