@@ -410,12 +410,7 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
   var cache = {message: {}, chat: []}, init = function(options){
     var init = options.init || {}
      mine = init.mine || {};
-
-    // 每次刷新页面都清空聊天记录
-    //layui.data('layim')[mine.id].chatlog = {};
     var local = layui.data('layim')[mine.id] || {};
-    local["chatlog"] = {};
-
     var obj = {
       base: options
       ,local: local
@@ -998,9 +993,9 @@ layui.define(['layer', 'laytpl', 'upload'], function(exports){
     var group = {}, index = elem.index();
     
     data.timestamp = data.timestamp || new Date().getTime();
-    if(data.fromid == cache.mine.id){
-      data.mine = true;
-    }
+    // if(data.fromid == cache.mine.id){
+    //   data.mine = true;
+    // }
     data.system || pushChatlog(data);
     messageNew = JSON.parse(JSON.stringify(data));
     

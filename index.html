@@ -123,21 +123,25 @@
 
             // 聊天消息通知
             ws.on("20002", (data) => {
+                console.log("receive chat message notify")
                 console.log(data)
 
                 if (tmpLayim) {
+                    let isMine = false;
+                    if (parseInt(myData.mine.id) == parseInt(data.mine.id)) {
+                        isMine = true;
+                    }
                     let newMsg = {
                         username: data.mine.username,
                         avatar: data.mine.avatar,
                         id: data.to.type == "group" ? data.to.id : data.mine.id,
                         content: data.mine.content,
-                        mine: data.mine.id == myData.mine.id,
                         fromid: data.to.id,
                         timestamp: data.timestamp,
-                        type: data.to.type
+                        type: data.to.type,
+                        mine: isMine,
                     }
 
-                    console.log(newMsg);
                     tmpLayim.getMessage(newMsg)
                 }
             });
@@ -221,6 +225,20 @@
 
         // 显示聊天界面
         showChatPanel = function () {
+            clearCacheLog = function () {
+                var cache = layui.layim.cache();
+                var local = layui.data('layim')[cache.mine.id]; //获取当前用户本地数据
+
+                //这里以删除本地聊天记录为例
+                delete local.chatlog;
+
+                //向localStorage同步数据
+                layui.data('layim', {
+                    key: cache.mine.id,
+                    value: local
+                });
+            }
+
             layui.use('layim', function (layim) {
                 //先来个客服模式压压精
                 console.log("mydata =")
@@ -261,6 +279,9 @@
                     //find: './find.html' //发现页面地址，若不开启，剔除该项即可
                 });
 
+                // 清空聊天记录
+                clearCacheLog();
+
                 //监听签名修改
                 layim.on('sign', function (value) {
                     console.log("change sign " + value);
@@ -290,7 +311,7 @@
                     let reqData = {
                         mine: res.mine,
                         to: {
-                            type: res.to.type,
+                            type: res.to.type || "friend",
                             id: res.to.id
                         }
                     };
